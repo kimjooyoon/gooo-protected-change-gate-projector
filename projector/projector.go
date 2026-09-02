@@ -530,9 +530,11 @@ func makeRefuted(events []Receipt, metrics Metrics, operational []OperationalRec
 
 func closedBeforeStage(events []Receipt, stage string) int {
 	indices := stageIndices(events)
+	stageIndex := indices[stage]
 	closed := 0
 	for _, candidate := range RequiredStages {
 		if candidate == stage { return closed }
+		if stageIndex >= 0 && indices[candidate] >= stageIndex { return closed }
 		event := receiptAt(events, indices[candidate])
 		if event == nil { return closed }
 		switch candidate {
