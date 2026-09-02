@@ -36,7 +36,7 @@ jobs:
             --generated-artifact gooo-replay.json
 
       - name: Fix check
-        run: test -z "$(go fix -diff ./...)"
+        run: go fix -diff ./...
 
       - name: Format check
         run: test -z "$(gofmt -l .)"
