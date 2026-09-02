@@ -36,7 +36,19 @@ jobs:
             --generated-artifact gooo-replay.json
 
       - name: Fix check
-        run: go fix -diff ./...
+        run: |
+          set -euo pipefail
+          set +e
+          go fix -diff ./... > "$RUNNER_TEMP/gooo/go-fix.diff" 2>&1
+          status=$?
+          set -e
+          if [ -s "$RUNNER_TEMP/gooo/go-fix.diff" ]; then
+            cat "$RUNNER_TEMP/gooo/go-fix.diff"
+            exit 1
+          fi
+          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then
+            exit "$status"
+          fi
 
       - name: Format check
         run: test -z "$(gofmt -l .)"
