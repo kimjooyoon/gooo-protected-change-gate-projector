@@ -1,0 +1,152 @@
+version = "0.53"
+authority = "PUBLISH_EXECUTABLE_PROTECTED_PATH_AUTHORIZATION_DISPATCH_AND_ADOPT_GATE_ORDER"
+mode = "bounded_read_only_projector"
+precedence = "REFUTED > UNKNOWN > CLOSED"
+cells = 12
+activities = 12
+cross_project_required_gates = 0
+scalar_outputs = "forbidden"
+
+[cell "C01_AUTHOR_BRANCH"]
+class = "FOUNDATION"
+role = "DRIVER"
+stage = "AUTHOR_BRANCH"
+activity = "A01_AUTHOR_BRANCH"
+
+[cell "C02_OPEN_PR"]
+class = "FOUNDATION"
+role = "DRIVER"
+stage = "OPEN_PR"
+activity = "A02_OPEN_PR"
+
+[cell "C03_PR_ACTIONS_GREEN"]
+class = "FOUNDATION"
+role = "OUTCOME"
+stage = "PR_ACTIONS_GREEN"
+activity = "A03_PR_ACTIONS_GREEN"
+
+[cell "C04_MERGE"]
+class = "FOUNDATION"
+role = "OUTCOME"
+stage = "MERGE"
+activity = "A04_MERGE"
+
+[cell "C05_MAIN_ACTIONS_GREEN"]
+class = "COHERENCE"
+role = "OUTCOME"
+stage = "MAIN_ACTIONS_GREEN"
+activity = "A05_MAIN_ACTIONS_GREEN"
+
+[cell "C06_POLICY_LOCK"]
+class = "COHERENCE"
+role = "GUARDRAIL"
+stage = "POLICY_LOCK"
+activity = "A06_POLICY_LOCK"
+
+[cell "C07_ANNOTATED_TAG"]
+class = "COHERENCE"
+role = "DRIVER"
+stage = "ANNOTATED_TAG"
+activity = "A07_ANNOTATED_TAG"
+
+[cell "C08_DRAFT_RELEASE"]
+class = "COHERENCE"
+role = "DRIVER"
+stage = "DRAFT_RELEASE"
+activity = "A08_DRAFT_RELEASE"
+
+[cell "C09_UPLOAD_NEW_ASSETS"]
+class = "REGRESSION"
+role = "GUARDRAIL"
+stage = "UPLOAD_NEW_ASSETS"
+activity = "A09_UPLOAD_NEW_ASSETS"
+
+[cell "C10_VERIFY_TAG_TARGET_AND_ASSET_DIGEST"]
+class = "REGRESSION"
+role = "GUARDRAIL"
+stage = "VERIFY_TAG_TARGET_AND_ASSET_DIGEST"
+activity = "A10_VERIFY_TAG_TARGET_AND_ASSET_DIGEST"
+
+[cell "C11_PUBLISH"]
+class = "REGRESSION"
+role = "OUTCOME"
+stage = "PUBLISH"
+activity = "A11_PUBLISH"
+
+[cell "C12_IMMUTABLE_AUDIT"]
+class = "REGRESSION"
+role = "GUARDRAIL"
+stage = "IMMUTABLE_AUDIT"
+activity = "A12_IMMUTABLE_AUDIT"
+
+[activity "A01_AUTHOR_BRANCH"]
+cell = "C01_AUTHOR_BRANCH"
+stage = "AUTHOR_BRANCH"
+on = "receipt.kind == author_branch && receipt.immutable_id != empty"
+emit = "gate_closed or UNKNOWN(missing_receipt)"
+
+[activity "A02_OPEN_PR"]
+cell = "C02_OPEN_PR"
+stage = "OPEN_PR"
+on = "receipt.kind == pull_request_opened && substantive_change_has_pr"
+emit = "gate_closed or REFUTED(direct_main) or UNKNOWN(missing_receipt)"
+
+[activity "A03_PR_ACTIONS_GREEN"]
+cell = "C03_PR_ACTIONS_GREEN"
+stage = "PR_ACTIONS_GREEN"
+on = "receipt.kind == pr_actions && receipt.status == green"
+emit = "gate_closed or UNKNOWN(missing_or_not_green_ci)"
+
+[activity "A04_MERGE"]
+cell = "C04_MERGE"
+stage = "MERGE"
+on = "receipt.kind == merge && prior_pr_actions_green"
+emit = "gate_closed or REFUTED(order_contradiction) or UNKNOWN(missing_receipt)"
+
+[activity "A05_MAIN_ACTIONS_GREEN"]
+cell = "C05_MAIN_ACTIONS_GREEN"
+stage = "MAIN_ACTIONS_GREEN"
+on = "receipt.kind == main_actions && receipt.status == green && receipt.fresh == true"
+emit = "gate_closed or UNKNOWN(stale_receipt)"
+
+[activity "A06_POLICY_LOCK"]
+cell = "C06_POLICY_LOCK"
+stage = "POLICY_LOCK"
+on = "count(receipt.kind == policy_lock) == 1"
+emit = "gate_closed or REFUTED(multiple_or_late_policy_mutation) or UNKNOWN(missing_policy_receipt)"
+
+[activity "A07_ANNOTATED_TAG"]
+cell = "C07_ANNOTATED_TAG"
+stage = "ANNOTATED_TAG"
+on = "receipt.kind == tag_created && receipt.annotated == true"
+emit = "gate_closed or REFUTED(lightweight_tag) or UNKNOWN(missing_tag_receipt)"
+
+[activity "A08_DRAFT_RELEASE"]
+cell = "C08_DRAFT_RELEASE"
+stage = "DRAFT_RELEASE"
+on = "receipt.kind == draft_release && exact_release_id"
+emit = "gate_closed or UNKNOWN(missing_or_ambiguous_release_receipt)"
+
+[activity "A09_UPLOAD_NEW_ASSETS"]
+cell = "C09_UPLOAD_NEW_ASSETS"
+stage = "UPLOAD_NEW_ASSETS"
+on = "receipt.kind == asset_uploaded && new_name && exact_release_id"
+emit = "gate_closed or REFUTED(replacement) or UNKNOWN(missing_asset_receipt)"
+
+[activity "A10_VERIFY_TAG_TARGET_AND_ASSET_DIGEST"]
+cell = "C10_VERIFY_TAG_TARGET_AND_ASSET_DIGEST"
+stage = "VERIFY_TAG_TARGET_AND_ASSET_DIGEST"
+on = "tag.target_sha == merge.sha && asset.digest == verified.digest"
+emit = "gate_closed or REFUTED(identity_or_digest_mismatch) or UNKNOWN(missing_verification_receipt)"
+
+[activity "A11_PUBLISH"]
+cell = "C11_PUBLISH"
+stage = "PUBLISH"
+on = "receipt.kind == release_published && prior_policy && prior_verification"
+emit = "gate_closed or REFUTED(order_contradiction) or UNKNOWN(missing_publish_receipt)"
+
+[activity "A12_IMMUTABLE_AUDIT"]
+cell = "C12_IMMUTABLE_AUDIT"
+stage = "IMMUTABLE_AUDIT"
+on = "receipt.kind == immutable_audit && receipt.status == passed && no_replacement"
+emit = "gate_closed or UNKNOWN(missing_or_not_green_audit)"
