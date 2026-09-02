@@ -1,0 +1,168 @@
+{
+  "cases": [
+    {
+      "name": "normal_implementation_pr_path",
+      "events": [
+        {"id":"impl-01","kind":"author_branch","ref":"refs/heads/feature/implementation","sha":"branch-impl","substantive":true,"change_class":"implementation"},
+        {"id":"impl-02","kind":"pull_request_opened","pr_number":101,"ref":"refs/heads/feature/implementation"},
+        {"id":"impl-03","kind":"pr_actions","pr_number":101,"status":"green"},
+        {"id":"impl-04","kind":"merge","pr_number":101,"sha":"merge-impl"},
+        {"id":"impl-05","kind":"main_actions","head_sha":"merge-impl","status":"green","fresh":true},
+        {"id":"impl-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"impl-07","kind":"tag_created","tag":"v0.1.0","target_sha":"merge-impl","annotated":true},
+        {"id":"impl-08","kind":"draft_release","release_id":"rel-impl-1","tag":"v0.1.0","draft":true},
+        {"id":"impl-09","kind":"asset_uploaded","release_id":"rel-impl-1","asset_name":"gooo-replay.json","asset_digest":"sha256:impl-replay"},
+        {"id":"impl-10","kind":"asset_verified","release_id":"rel-impl-1","asset_name":"gooo-replay.json","asset_digest":"sha256:impl-replay","status":"passed"},
+        {"id":"impl-11","kind":"release_published","release_id":"rel-impl-1"},
+        {"id":"impl-12","kind":"immutable_audit","release_id":"rel-impl-1","status":"passed"}
+      ],
+      "expect": {"decision":"CLOSED","current_stage":"IMMUTABLE_AUDIT","gates_closed":12,"gates_unknown":0,"gates_refuted":0,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "normal_maintenance_pr_path",
+      "events": [
+        {"id":"maint-01","kind":"author_branch","ref":"refs/heads/maintenance/release-hardening","sha":"branch-maint","substantive":true,"change_class":"maintenance","historical_shape":"release_hardening_is_substantive"},
+        {"id":"maint-02","kind":"pull_request_opened","pr_number":102,"ref":"refs/heads/maintenance/release-hardening"},
+        {"id":"maint-03","kind":"pr_actions","pr_number":102,"status":"green"},
+        {"id":"maint-04","kind":"merge","pr_number":102,"sha":"merge-maint"},
+        {"id":"maint-05","kind":"main_actions","head_sha":"merge-maint","status":"green","fresh":true},
+        {"id":"maint-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"maint-07","kind":"tag_created","tag":"v0.1.1","target_sha":"merge-maint","annotated":true},
+        {"id":"maint-08","kind":"draft_release","release_id":"rel-maint-1","tag":"v0.1.1","draft":true},
+        {"id":"maint-09","kind":"asset_uploaded","release_id":"rel-maint-1","asset_name":"gooo-replay.json","asset_digest":"sha256:maint-replay"},
+        {"id":"maint-10","kind":"asset_verified","release_id":"rel-maint-1","asset_name":"gooo-replay.json","asset_digest":"sha256:maint-replay","status":"passed"},
+        {"id":"maint-11","kind":"release_published","release_id":"rel-maint-1"},
+        {"id":"maint-12","kind":"immutable_audit","release_id":"rel-maint-1","status":"passed"}
+      ],
+      "expect": {"decision":"CLOSED","current_stage":"IMMUTABLE_AUDIT","gates_closed":12,"gates_unknown":0,"gates_refuted":0,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "direct_main_implementation",
+      "events": [
+        {"id":"direct-impl-01","kind":"author_branch","ref":"refs/heads/feature/direct"},
+        {"id":"direct-impl-02","kind":"push","ref":"refs/heads/main","sha":"bad-impl","direct_main":true,"substantive":true,"change_class":"implementation","historical_shape":"push_to_default_branch_without_pull_request"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"OPEN_PR","gates_closed":1,"gates_unknown":0,"gates_refuted":1,"direct_main_events":1,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "direct_main_release_plumbing",
+      "events": [
+        {"id":"direct-release-01","kind":"author_branch","ref":"refs/heads/release/hardening"},
+        {"id":"direct-release-02","kind":"change","ref":"refs/heads/main","sha":"bad-release","direct_main":true,"substantive":true,"change_class":"release_plumbing","historical_shape":"release_workflow_fix_on_default_branch"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"OPEN_PR","gates_closed":1,"gates_unknown":0,"gates_refuted":1,"direct_main_events":1,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "pr_ci_missing",
+      "events": [
+        {"id":"missing-pr-01","kind":"author_branch","ref":"refs/heads/feature/no-ci","substantive":true,"change_class":"implementation"},
+        {"id":"missing-pr-02","kind":"pull_request_opened","pr_number":103,"ref":"refs/heads/feature/no-ci","historical_shape":"pull_request_without_check_run"}
+      ],
+      "expect": {"decision":"UNKNOWN","current_stage":"PR_ACTIONS_GREEN","gates_closed":2,"gates_unknown":1,"gates_refuted":0,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "main_ci_stale",
+      "events": [
+        {"id":"stale-main-01","kind":"author_branch","ref":"refs/heads/feature/stale","substantive":true,"change_class":"implementation"},
+        {"id":"stale-main-02","kind":"pull_request_opened","pr_number":104},
+        {"id":"stale-main-03","kind":"pr_actions","pr_number":104,"status":"green"},
+        {"id":"stale-main-04","kind":"merge","pr_number":104,"sha":"merge-stale"},
+        {"id":"stale-main-05","kind":"main_actions","head_sha":"old-main","status":"green","fresh":false,"historical_shape":"green_run_for_previous_main_head"}
+      ],
+      "expect": {"decision":"UNKNOWN","current_stage":"MAIN_ACTIONS_GREEN","gates_closed":4,"gates_unknown":1,"gates_refuted":0,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "lightweight_instead_of_annotated_tag",
+      "events": [
+        {"id":"light-tag-01","kind":"author_branch","ref":"refs/heads/feature/light-tag","substantive":true,"change_class":"implementation"},
+        {"id":"light-tag-02","kind":"pull_request_opened","pr_number":105},
+        {"id":"light-tag-03","kind":"pr_actions","pr_number":105,"status":"green"},
+        {"id":"light-tag-04","kind":"merge","pr_number":105,"sha":"merge-light"},
+        {"id":"light-tag-05","kind":"main_actions","head_sha":"merge-light","status":"green","fresh":true},
+        {"id":"light-tag-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"light-tag-07","kind":"tag_created","tag":"v0.1.2","target_sha":"merge-light","annotated":false,"historical_shape":"lightweight_tag"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"ANNOTATED_TAG","gates_closed":6,"gates_unknown":0,"gates_refuted":1,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "tag_target_mismatch",
+      "events": [
+        {"id":"target-mismatch-01","kind":"author_branch","ref":"refs/heads/feature/wrong-target","substantive":true,"change_class":"implementation"},
+        {"id":"target-mismatch-02","kind":"pull_request_opened","pr_number":106},
+        {"id":"target-mismatch-03","kind":"pr_actions","pr_number":106,"status":"green"},
+        {"id":"target-mismatch-04","kind":"merge","pr_number":106,"sha":"merge-right"},
+        {"id":"target-mismatch-05","kind":"main_actions","head_sha":"merge-right","status":"green","fresh":true},
+        {"id":"target-mismatch-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"target-mismatch-07","kind":"tag_created","tag":"v0.1.3","target_sha":"merge-wrong","annotated":true},
+        {"id":"target-mismatch-08","kind":"draft_release","release_id":"rel-wrong-target","tag":"v0.1.3","draft":true},
+        {"id":"target-mismatch-09","kind":"asset_uploaded","release_id":"rel-wrong-target","asset_name":"gooo-replay.json","asset_digest":"sha256:wrong-target"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"VERIFY_TAG_TARGET_AND_ASSET_DIGEST","gates_closed":9,"gates_unknown":0,"gates_refuted":1,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "publish_before_policy",
+      "events": [
+        {"id":"early-policy-01","kind":"author_branch","ref":"refs/heads/feature/early-policy","substantive":true,"change_class":"implementation"},
+        {"id":"early-policy-02","kind":"pull_request_opened","pr_number":107},
+        {"id":"early-policy-03","kind":"pr_actions","pr_number":107,"status":"green"},
+        {"id":"early-policy-04","kind":"merge","pr_number":107,"sha":"merge-early-policy"},
+        {"id":"early-policy-05","kind":"main_actions","head_sha":"merge-early-policy","status":"green","fresh":true},
+        {"id":"early-policy-06","kind":"release_published","release_id":"rel-early-policy","historical_shape":"published_before_policy_lock"},
+        {"id":"early-policy-07","kind":"policy_lock","action":"apply_once"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"PUBLISH","gates_closed":5,"gates_unknown":0,"gates_refuted":1,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "publish_before_asset_verification",
+      "events": [
+        {"id":"early-verify-01","kind":"author_branch","ref":"refs/heads/feature/early-verify","substantive":true,"change_class":"implementation"},
+        {"id":"early-verify-02","kind":"pull_request_opened","pr_number":108},
+        {"id":"early-verify-03","kind":"pr_actions","pr_number":108,"status":"green"},
+        {"id":"early-verify-04","kind":"merge","pr_number":108,"sha":"merge-early-verify"},
+        {"id":"early-verify-05","kind":"main_actions","head_sha":"merge-early-verify","status":"green","fresh":true},
+        {"id":"early-verify-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"early-verify-07","kind":"tag_created","tag":"v0.1.4","target_sha":"merge-early-verify","annotated":true},
+        {"id":"early-verify-08","kind":"draft_release","release_id":"rel-early-verify","tag":"v0.1.4","draft":true},
+        {"id":"early-verify-09","kind":"asset_uploaded","release_id":"rel-early-verify","asset_name":"gooo-replay.json","asset_digest":"sha256:early-verify"},
+        {"id":"early-verify-10","kind":"release_published","release_id":"rel-early-verify","historical_shape":"published_before_asset_verification"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"PUBLISH","gates_closed":9,"gates_unknown":0,"gates_refuted":1,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":0}
+    },
+    {
+      "name": "attempt_to_replace_immutable_asset",
+      "events": [
+        {"id":"replace-01","kind":"author_branch","ref":"refs/heads/feature/replace","substantive":true,"change_class":"implementation"},
+        {"id":"replace-02","kind":"pull_request_opened","pr_number":109},
+        {"id":"replace-03","kind":"pr_actions","pr_number":109,"status":"green"},
+        {"id":"replace-04","kind":"merge","pr_number":109,"sha":"merge-replace"},
+        {"id":"replace-05","kind":"main_actions","head_sha":"merge-replace","status":"green","fresh":true},
+        {"id":"replace-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"replace-07","kind":"tag_created","tag":"v0.1.5","target_sha":"merge-replace","annotated":true},
+        {"id":"replace-08","kind":"draft_release","release_id":"rel-replace","tag":"v0.1.5","draft":true},
+        {"id":"replace-09","kind":"asset_uploaded","release_id":"rel-replace","asset_name":"gooo-replay.json","asset_digest":"sha256:first"},
+        {"id":"replace-10","kind":"asset_replaced","release_id":"rel-replace","asset_name":"gooo-replay.json","asset_digest":"sha256:second","action":"replace","historical_shape":"immutable_asset_already_exists"}
+      ],
+      "expect": {"decision":"REFUTED","current_stage":"IMMUTABLE_AUDIT","gates_closed":9,"gates_unknown":0,"gates_refuted":1,"direct_main_events":0,"recreated_artifact_attempts":1,"accepted_resume_operations":0}
+    },
+    {
+      "name": "interrupted_release_resumed_by_exact_release_id_without_recreation",
+      "events": [
+        {"id":"resume-01","kind":"author_branch","ref":"refs/heads/feature/resume","substantive":true,"change_class":"implementation"},
+        {"id":"resume-02","kind":"pull_request_opened","pr_number":110},
+        {"id":"resume-03","kind":"pr_actions","pr_number":110,"status":"green"},
+        {"id":"resume-04","kind":"merge","pr_number":110,"sha":"merge-resume"},
+        {"id":"resume-05","kind":"main_actions","head_sha":"merge-resume","status":"green","fresh":true},
+        {"id":"resume-06","kind":"policy_lock","action":"apply_once"},
+        {"id":"resume-07","kind":"tag_created","tag":"v0.1.6","target_sha":"merge-resume","annotated":true},
+        {"id":"resume-08","kind":"draft_release","release_id":"rel-resume-exact","tag":"v0.1.6","draft":true},
+        {"id":"resume-09","kind":"draft_lookup","release_id":"rel-resume-exact","status":"404","historical_shape":"transient_draft_list_endpoint_404"},
+        {"id":"resume-10","kind":"resume","release_id":"rel-resume-exact","action":"continue_existing_draft","historical_shape":"exact_release_id_receipt"},
+        {"id":"resume-11","kind":"asset_uploaded","release_id":"rel-resume-exact","asset_name":"gooo-replay.json","asset_digest":"sha256:resume"},
+        {"id":"resume-12","kind":"asset_verified","release_id":"rel-resume-exact","asset_name":"gooo-replay.json","asset_digest":"sha256:resume","status":"passed"},
+        {"id":"resume-13","kind":"release_published","release_id":"rel-resume-exact"},
+        {"id":"resume-14","kind":"immutable_audit","release_id":"rel-resume-exact","status":"passed"}
+      ],
+      "expect": {"decision":"CLOSED","current_stage":"IMMUTABLE_AUDIT","gates_closed":12,"gates_unknown":0,"gates_refuted":0,"direct_main_events":0,"recreated_artifact_attempts":0,"accepted_resume_operations":1}
+    }
+  ]
+}

@@ -1,0 +1,44 @@
+name: gooo-release-evidence
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  release-evidence:
+    name: release-evidence
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout immutable tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Select Go 1.27.x
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache: true
+
+      - name: Replay and measure tagged source
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gooo-release"
+          go run ./cmd/projector --events fixtures/cases.json --out "$RUNNER_TEMP/gooo-release/replay.json" --generated-artifact gooo-release-replay.json
+          go run ./cmd/projector --events fixtures/cases.json --out "$RUNNER_TEMP/gooo-release/measurement.json" --measure --generated-artifact gooo-release-replay.json
+          sha256sum "$RUNNER_TEMP/gooo-release"/* > "$RUNNER_TEMP/gooo-release/SHA256SUMS"
+
+      - name: Upload tagged evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-release-evidence-${{ github.ref_name }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/gooo-release
+          if-no-files-found: error
+          retention-days: 14
