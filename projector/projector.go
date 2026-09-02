@@ -105,18 +105,18 @@ type Metrics struct {
 }
 
 type OperationalRecord struct {
-	StableID       string `json:"stable_id"`
-	Classification string `json:"classification"`
+	StableID       string   `json:"stable_id"`
+	Classification string   `json:"classification"`
 	Decision       Decision `json:"decision,omitempty"`
-	SemanticState  string `json:"semantic_state,omitempty"`
-	ReceiptID      string `json:"receipt_id,omitempty"`
-	RunID          int64  `json:"run_id,omitempty"`
-	ReleaseID      int64  `json:"release_id,omitempty"`
-	Tag            string `json:"tag,omitempty"`
-	Event          string `json:"event"`
-	Outcome        string `json:"outcome"`
-	Resolution     string `json:"resolution,omitempty"`
-	Detail         string `json:"detail,omitempty"`
+	SemanticState  string   `json:"semantic_state,omitempty"`
+	ReceiptID      string   `json:"receipt_id,omitempty"`
+	RunID          int64    `json:"run_id,omitempty"`
+	ReleaseID      int64    `json:"release_id,omitempty"`
+	Tag            string   `json:"tag,omitempty"`
+	Event          string   `json:"event"`
+	Outcome        string   `json:"outcome"`
+	Resolution     string   `json:"resolution,omitempty"`
+	Detail         string   `json:"detail,omitempty"`
 }
 
 type Projection struct {
@@ -150,10 +150,10 @@ type Case struct {
 }
 
 type FixtureFile struct {
-	ProofChoiceCounts    map[string]int      `json:"proof_choice_counts"`
-	IndicatorCounts      map[string]int      `json:"indicator_counts"`
-	Cases                []Case              `json:"cases"`
-	OperationalHistory   []OperationalRecord `json:"operational_history"`
+	ProofChoiceCounts  map[string]int      `json:"proof_choice_counts"`
+	IndicatorCounts    map[string]int      `json:"indicator_counts"`
+	Cases              []Case              `json:"cases"`
+	OperationalHistory []OperationalRecord `json:"operational_history"`
 }
 
 type Expectation struct {
@@ -645,18 +645,18 @@ func finalizeProjection(projection Projection) Projection {
 
 func stageEvidence(stage string) (string, string, bool) {
 	evidence := map[string][2]string{
-		"AUTHOR_BRANCH": {"FOUNDATION", "DRIVER"},
-		"OPEN_PR": {"FOUNDATION", "DRIVER"},
-		"PR_ACTIONS_GREEN": {"FOUNDATION", "OUTCOME"},
-		"MERGE": {"FOUNDATION", "OUTCOME"},
-		"MAIN_ACTIONS_GREEN": {"COHERENCE", "OUTCOME"},
-		"POLICY_LOCK": {"COHERENCE", "GUARDRAIL"},
-		"ANNOTATED_TAG": {"COHERENCE", "DRIVER"},
-		"DRAFT_RELEASE": {"COHERENCE", "DRIVER"},
-		"UPLOAD_NEW_ASSETS": {"REGRESSION", "GUARDRAIL"},
+		"AUTHOR_BRANCH":                      {"FOUNDATION", "DRIVER"},
+		"OPEN_PR":                            {"FOUNDATION", "DRIVER"},
+		"PR_ACTIONS_GREEN":                   {"FOUNDATION", "OUTCOME"},
+		"MERGE":                              {"FOUNDATION", "OUTCOME"},
+		"MAIN_ACTIONS_GREEN":                 {"COHERENCE", "OUTCOME"},
+		"POLICY_LOCK":                        {"COHERENCE", "GUARDRAIL"},
+		"ANNOTATED_TAG":                      {"COHERENCE", "DRIVER"},
+		"DRAFT_RELEASE":                      {"COHERENCE", "DRIVER"},
+		"UPLOAD_NEW_ASSETS":                  {"REGRESSION", "GUARDRAIL"},
 		"VERIFY_TAG_TARGET_AND_ASSET_DIGEST": {"REGRESSION", "GUARDRAIL"},
-		"PUBLISH": {"REGRESSION", "OUTCOME"},
-		"IMMUTABLE_AUDIT": {"REGRESSION", "GUARDRAIL"},
+		"PUBLISH":                            {"REGRESSION", "OUTCOME"},
+		"IMMUTABLE_AUDIT":                    {"REGRESSION", "GUARDRAIL"},
 	}
 	pair, ok := evidence[stage]
 	return pair[0], pair[1], ok

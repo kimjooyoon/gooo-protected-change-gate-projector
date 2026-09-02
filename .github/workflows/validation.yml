@@ -52,11 +52,13 @@ jobs:
           fi
 
       - name: Format check
-        run: gofmt -w .
-
-      - name: Record Actions-only source transform
-        if: always()
-        run: git diff --binary > "$RUNNER_TEMP/gooo/source-transform.patch"
+        run: |
+          set -euo pipefail
+          formatted="$(gofmt -l .)"
+          if [ -n "$formatted" ]; then
+            printf '%s\n' "$formatted"
+            exit 1
+          fi
 
       - name: Build
         run: go build ./...
@@ -120,7 +122,6 @@ jobs:
 
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: gooo-validation-${{ github.run_id }}
           path: ${{ runner.temp }}/gooo
