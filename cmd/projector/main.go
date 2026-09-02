@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"maps"
 	"os"
 	"runtime"
 	"strconv"
@@ -16,12 +17,12 @@ import (
 type stringList []string
 
 type fixtureReplay struct {
-	Schema               string                       `json:"schema"`
-	ProofChoiceCounts    map[string]int               `json:"proof_choice_counts"`
-	IndicatorCounts      map[string]int               `json:"indicator_counts"`
-	Cases                []fixtureReplayCase          `json:"cases"`
-	OperationalHistory   []projector.OperationalRecord `json:"operational_history"`
-	Measurement          *projector.Measurement       `json:"measurement,omitempty"`
+	Schema             string                        `json:"schema"`
+	ProofChoiceCounts  map[string]int                `json:"proof_choice_counts"`
+	IndicatorCounts    map[string]int                `json:"indicator_counts"`
+	Cases              []fixtureReplayCase           `json:"cases"`
+	OperationalHistory []projector.OperationalRecord `json:"operational_history"`
+	Measurement        *projector.Measurement        `json:"measurement,omitempty"`
 }
 
 type fixtureReplayCase struct {
@@ -105,9 +106,7 @@ func main() {
 
 func copyCounts(counts map[string]int) map[string]int {
 	copyOf := make(map[string]int, len(counts))
-	for key, value := range counts {
-		copyOf[key] = value
-	}
+	maps.Copy(copyOf, counts)
 	return copyOf
 }
 
