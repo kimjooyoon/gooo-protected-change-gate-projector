@@ -94,7 +94,7 @@ func writeJSON(value any, outPath string) {
 	if outPath == "" {
 		_, err = os.Stdout.Write(encoded)
 	} else {
-		err = os.WriteFile(*outPath, encoded, 0o600)
+		err = os.WriteFile(outPath, encoded, 0o600)
 	}
 	if err != nil { fail("write projection: %v", err) }
 }
