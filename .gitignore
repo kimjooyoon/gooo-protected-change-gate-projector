@@ -1,0 +1,4 @@
+# Build output and caller-owned temporary evidence stay outside the repository.
+/projector-bin
+/gooo-replay.json
+/gooo-measurement.json
