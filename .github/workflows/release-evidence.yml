@@ -31,8 +31,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/gooo-release"
+          go test ./...
+          go run ./cmd/projector --events fixtures/cases.json --out "$RUNNER_TEMP/gooo-release/conformance.json" --generated-artifact gooo-release-conformance.json
           go run ./cmd/projector --events fixtures/cases.json --out "$RUNNER_TEMP/gooo-release/replay.json" --generated-artifact gooo-release-replay.json
           go run ./cmd/projector --events fixtures/cases.json --out "$RUNNER_TEMP/gooo-release/measurement.json" --measure --generated-artifact gooo-release-replay.json
+          for evidence in conformance.json replay.json measurement.json; do
+            jq -e '
+              (.proof_choice_counts == {"FOUNDATION":4,"COHERENCE":4,"REGRESSION":4}) and
+              (.indicator_counts == {"DRIVER":4,"OUTCOME":4,"GUARDRAIL":4}) and
+              (all(.cases[]; (.proof_choice | type) == "string" and (.indicator | type) == "string")) and
+              (all(.cases[].projection; (.proof_choice | type) == "string" and (.indicator | type) == "string"))
+            ' "$RUNNER_TEMP/gooo-release/$evidence"
+          done
           sha256sum "$RUNNER_TEMP/gooo-release"/* > "$RUNNER_TEMP/gooo-release/SHA256SUMS"
 
       - name: Upload tagged evidence

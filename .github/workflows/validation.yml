@@ -52,7 +52,13 @@ jobs:
           fi
 
       - name: Format check
-        run: test -z "$(gofmt -l .)"
+        run: |
+          set -euo pipefail
+          formatted="$(gofmt -l .)"
+          if [ -n "$formatted" ]; then
+            printf '%s\n' "$formatted"
+            exit 1
+          fi
 
       - name: Build
         run: go build ./...
@@ -64,7 +70,12 @@ jobs:
         run: go test ./...
 
       - name: Conformance
-        run: go test ./projector -run '^TestConformanceFixtureVectors$' -count=1
+        run: |
+          go test ./projector -run '^TestConformanceFixtureVectors$' -count=1
+          go run ./cmd/projector \
+            --events fixtures/cases.json \
+            --out "$RUNNER_TEMP/gooo/conformance.json" \
+            --generated-artifact gooo-conformance.json
 
       - name: Replay
         run: |
@@ -83,15 +94,30 @@ jobs:
             --measure \
             --generated-artifact gooo-replay.json
 
+      - name: Evidence field assertions
+        run: |
+          set -euo pipefail
+          for evidence in generated-replay.json conformance.json replay.json measurement.json; do
+            jq -e '
+              (.proof_choice_counts == {"FOUNDATION":4,"COHERENCE":4,"REGRESSION":4}) and
+              (.indicator_counts == {"DRIVER":4,"OUTCOME":4,"GUARDRAIL":4}) and
+              (all(.cases[]; (.proof_choice | type) == "string" and (.indicator | type) == "string")) and
+              (all(.cases[].projection; (.proof_choice | type) == "string" and (.indicator | type) == "string"))
+            ' "$RUNNER_TEMP/gooo/$evidence"
+          done
+
       - name: Inventory
         run: |
           set -euo pipefail
           go_lines="$(find . -type f -name '*.go' -not -path './.git/*' -print0 | xargs -0 awk '{n += 1} END {print n + 0}')"
           gooo_lines="$(awk 'END {print NR + 0}' .gooo)"
+          go_files="$(find . -type f -name '*.go' -not -path './.git/*' -print | sort | jq -R -s 'split("\n") | map(select(length > 0))')"
           jq -n \
             --argjson go_lines "$go_lines" \
             --argjson gooo_lines "$gooo_lines" \
-            '{readme_excluded:true, go_lines:$go_lines, gooo_lines:$gooo_lines, cells:12, activities:12, scalar_outputs:"forbidden"}' \
+            --argjson go_files "$go_files" \
+            --slurpfile fixture fixtures/cases.json \
+            '($fixture[0]) as $f | {readme_excluded:true, go_files:$go_files, go_lines:$go_lines, gooo_files:[".gooo"], gooo_lines:$gooo_lines, cells:12, activities:12, proof_choice_counts:$f.proof_choice_counts, indicator_counts:$f.indicator_counts, cases:[$f.cases[]|{name,proof_choice,indicator}], operational_history:$f.operational_history, scalar_outputs:"forbidden"}' \
             > "$RUNNER_TEMP/gooo/inventory.json"
 
       - name: Upload generated artifacts

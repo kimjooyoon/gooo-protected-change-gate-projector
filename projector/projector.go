@@ -105,15 +105,26 @@ type Metrics struct {
 }
 
 type OperationalRecord struct {
-	ReceiptID  string `json:"receipt_id"`
-	Event      string `json:"event"`
-	Outcome    string `json:"outcome"`
-	Resolution string `json:"resolution,omitempty"`
-	Detail     string `json:"detail,omitempty"`
+	StableID       string   `json:"stable_id"`
+	Classification string   `json:"classification"`
+	Decision       Decision `json:"decision,omitempty"`
+	SemanticState  string   `json:"semantic_state,omitempty"`
+	ReceiptID      string   `json:"receipt_id,omitempty"`
+	RunID          int64    `json:"run_id,omitempty"`
+	ReleaseID      int64    `json:"release_id,omitempty"`
+	Tag            string   `json:"tag,omitempty"`
+	Event          string   `json:"event"`
+	Outcome        string   `json:"outcome"`
+	Resolution     string   `json:"resolution,omitempty"`
+	Detail         string   `json:"detail,omitempty"`
 }
 
 type Projection struct {
 	Schema                string              `json:"schema"`
+	ProofChoice           string              `json:"proof_choice"`
+	Indicator             string              `json:"indicator"`
+	ProofChoiceCounts     map[string]int      `json:"proof_choice_counts"`
+	IndicatorCounts       map[string]int      `json:"indicator_counts"`
 	Decision              Decision            `json:"decision"`
 	CurrentStage          string              `json:"current_stage"`
 	NextOperation         string              `json:"next_operation"`
@@ -131,17 +142,24 @@ type EventFile struct {
 }
 
 type Case struct {
-	Name   string      `json:"name"`
-	Events []Receipt   `json:"events"`
-	Expect Expectation `json:"expect"`
+	Name        string      `json:"name"`
+	ProofChoice string      `json:"proof_choice"`
+	Indicator   string      `json:"indicator"`
+	Events      []Receipt   `json:"events"`
+	Expect      Expectation `json:"expect"`
 }
 
 type FixtureFile struct {
-	Cases []Case `json:"cases"`
+	ProofChoiceCounts  map[string]int      `json:"proof_choice_counts"`
+	IndicatorCounts    map[string]int      `json:"indicator_counts"`
+	Cases              []Case              `json:"cases"`
+	OperationalHistory []OperationalRecord `json:"operational_history"`
 }
 
 type Expectation struct {
 	Decision          Decision `json:"decision"`
+	ProofChoice       string   `json:"proof_choice"`
+	Indicator         string   `json:"indicator"`
 	CurrentStage      string   `json:"current_stage"`
 	GatesClosed       int      `json:"gates_closed"`
 	GatesUnknown      int      `json:"gates_unknown"`
@@ -152,19 +170,23 @@ type Expectation struct {
 }
 
 type Cell struct {
-	ID       string
-	Class    string
-	Role     string
-	Stage    string
-	Activity string
+	ID          string
+	Class       string
+	Role        string
+	ProofChoice string
+	Indicator   string
+	Stage       string
+	Activity    string
 }
 
 type Activity struct {
-	ID    string
-	Cell  string
-	Stage string
-	On    string
-	Emit  string
+	ID          string
+	Cell        string
+	Stage       string
+	ProofChoice string
+	Indicator   string
+	On          string
+	Emit        string
 }
 
 type Contract struct {
@@ -177,6 +199,8 @@ type Contract struct {
 	CrossProjectRequiredGates int
 	Cells                     []Cell
 	Activities                []Activity
+	ProofChoiceCounts         map[string]int
+	IndicatorCounts           map[string]int
 }
 
 func LoadContract(r io.Reader) (Contract, error) {
@@ -236,6 +260,10 @@ func LoadContract(r io.Reader) (Contract, error) {
 				currentCell.Class = value
 			case "role":
 				currentCell.Role = value
+			case "proof_choice":
+				currentCell.ProofChoice = value
+			case "indicator":
+				currentCell.Indicator = value
 			case "stage":
 				currentCell.Stage = value
 			case "activity":
@@ -249,6 +277,10 @@ func LoadContract(r io.Reader) (Contract, error) {
 				currentActivity.Cell = value
 			case "stage":
 				currentActivity.Stage = value
+			case "proof_choice":
+				currentActivity.ProofChoice = value
+			case "indicator":
+				currentActivity.Indicator = value
 			case "on":
 				currentActivity.On = value
 			case "emit":
@@ -273,6 +305,10 @@ func LoadContract(r io.Reader) (Contract, error) {
 			contract.ActivityCount, _ = strconv.Atoi(value)
 		case "cross_project_required_gates":
 			contract.CrossProjectRequiredGates, _ = strconv.Atoi(value)
+		case "proof_choice_counts":
+			contract.ProofChoiceCounts = parseCounts(value)
+		case "indicator_counts":
+			contract.IndicatorCounts = parseCounts(value)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -342,6 +378,21 @@ func ValidateContract(contract Contract) error {
 			return fmt.Errorf("role %s must have four activities", role)
 		}
 	}
+	proofChoiceCount := map[string]int{}
+	indicatorCount := map[string]int{}
+	for _, cell := range contract.Cells {
+		if cell.ProofChoice == "" || cell.Indicator == "" {
+			return fmt.Errorf("cell %s has no literal proof_choice and indicator", cell.ID)
+		}
+		proofChoiceCount[cell.ProofChoice]++
+		indicatorCount[cell.Indicator]++
+	}
+	if !equalCounts(contract.ProofChoiceCounts, map[string]int{"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4}) || !equalCounts(proofChoiceCount, map[string]int{"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4}) {
+		return errors.New("proof_choice_counts must be FOUNDATION=4, COHERENCE=4, REGRESSION=4")
+	}
+	if !equalCounts(contract.IndicatorCounts, map[string]int{"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}) || !equalCounts(indicatorCount, map[string]int{"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}) {
+		return errors.New("indicator_counts must be DRIVER=4, OUTCOME=4, GUARDRAIL=4")
+	}
 	activityByID := make(map[string]Activity)
 	for _, activity := range contract.Activities {
 		if _, exists := activityByID[activity.ID]; exists {
@@ -351,11 +402,38 @@ func ValidateContract(contract Contract) error {
 	}
 	for _, cell := range contract.Cells {
 		activity, ok := activityByID[cell.Activity]
-		if !ok || activity.Cell != cell.ID || activity.Stage != cell.Stage || activity.On == "" || activity.Emit == "" {
+		if !ok || activity.Cell != cell.ID || activity.Stage != cell.Stage || activity.ProofChoice != cell.ProofChoice || activity.Indicator != cell.Indicator || activity.On == "" || activity.Emit == "" {
 			return fmt.Errorf("activity contract incomplete for %s", cell.ID)
 		}
 	}
 	return nil
+}
+
+func parseCounts(value string) map[string]int {
+	counts := map[string]int{}
+	for item := range strings.SplitSeq(value, ",") {
+		key, count, ok := strings.Cut(strings.TrimSpace(item), "=")
+		if !ok {
+			continue
+		}
+		parsed, err := strconv.Atoi(strings.TrimSpace(count))
+		if err == nil {
+			counts[strings.TrimSpace(key)] = parsed
+		}
+	}
+	return counts
+}
+
+func equalCounts(left, right map[string]int) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for key, want := range right {
+		if left[key] != want {
+			return false
+		}
+	}
+	return true
 }
 
 func equalDecisions(left, right []Decision) bool {
@@ -496,7 +574,7 @@ func project(input []Receipt, contract *Contract) Projection {
 	}
 	closed++
 	metrics.GatesClosed = closed
-	return Projection{
+	return finalizeProjection(Projection{
 		Schema:                Schema,
 		Decision:              Closed,
 		CurrentStage:          "IMMUTABLE_AUDIT",
@@ -507,7 +585,7 @@ func project(input []Receipt, contract *Contract) Projection {
 		OperationalHistory:    operational,
 		UtilityImprovement:    unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
 		Measurement:           unknownMeasurement(),
-	}
+	})
 }
 
 func missingFrontier(stage, step, class, next, blocked string) UnknownFrontier {
@@ -517,7 +595,7 @@ func missingFrontier(stage, step, class, next, blocked string) UnknownFrontier {
 func makeUnknown(metrics Metrics, operational []OperationalRecord, closed int, frontier UnknownFrontier) Projection {
 	metrics.GatesClosed = closed
 	metrics.GatesUnknown = 1
-	return Projection{
+	return finalizeProjection(Projection{
 		Schema:                Schema,
 		Decision:              Unknown,
 		CurrentStage:          frontier.Stage,
@@ -529,13 +607,13 @@ func makeUnknown(metrics Metrics, operational []OperationalRecord, closed int, f
 		OperationalHistory:    operational,
 		UtilityImprovement:    unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
 		Measurement:           unknownMeasurement(),
-	}
+	})
 }
 
 func makeRefuted(events []Receipt, metrics Metrics, operational []OperationalRecord, stage, reason string, ids []string) Projection {
 	metrics.GatesClosed = closedBeforeStage(events, stage)
 	metrics.GatesRefuted = 1
-	return Projection{
+	return finalizeProjection(Projection{
 		Schema:                Schema,
 		Decision:              Refuted,
 		CurrentStage:          stage,
@@ -546,7 +624,42 @@ func makeRefuted(events []Receipt, metrics Metrics, operational []OperationalRec
 		OperationalHistory:    operational,
 		UtilityImprovement:    unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
 		Measurement:           unknownMeasurement(),
+	})
+}
+
+func finalizeProjection(projection Projection) Projection {
+	if projection.ProofChoiceCounts == nil {
+		projection.ProofChoiceCounts = map[string]int{"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4}
 	}
+	if projection.IndicatorCounts == nil {
+		projection.IndicatorCounts = map[string]int{"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}
+	}
+	if projection.ProofChoice == "" || projection.Indicator == "" {
+		if proofChoice, indicator, ok := stageEvidence(projection.CurrentStage); ok {
+			projection.ProofChoice = proofChoice
+			projection.Indicator = indicator
+		}
+	}
+	return projection
+}
+
+func stageEvidence(stage string) (string, string, bool) {
+	evidence := map[string][2]string{
+		"AUTHOR_BRANCH":                      {"FOUNDATION", "DRIVER"},
+		"OPEN_PR":                            {"FOUNDATION", "DRIVER"},
+		"PR_ACTIONS_GREEN":                   {"FOUNDATION", "OUTCOME"},
+		"MERGE":                              {"FOUNDATION", "OUTCOME"},
+		"MAIN_ACTIONS_GREEN":                 {"COHERENCE", "OUTCOME"},
+		"POLICY_LOCK":                        {"COHERENCE", "GUARDRAIL"},
+		"ANNOTATED_TAG":                      {"COHERENCE", "DRIVER"},
+		"DRAFT_RELEASE":                      {"COHERENCE", "DRIVER"},
+		"UPLOAD_NEW_ASSETS":                  {"REGRESSION", "GUARDRAIL"},
+		"VERIFY_TAG_TARGET_AND_ASSET_DIGEST": {"REGRESSION", "GUARDRAIL"},
+		"PUBLISH":                            {"REGRESSION", "OUTCOME"},
+		"IMMUTABLE_AUDIT":                    {"REGRESSION", "GUARDRAIL"},
+	}
+	pair, ok := evidence[stage]
+	return pair[0], pair[1], ok
 }
 
 func closedBeforeStage(events []Receipt, stage string) int {
@@ -840,7 +953,7 @@ func operationalRecords(events []Receipt) []OperationalRecord {
 	records := []OperationalRecord{}
 	for _, event := range events {
 		if hasKind(event, "draft_lookup", "release_lookup") && strings.Contains(event.Status, "404") {
-			records = append(records, OperationalRecord{ReceiptID: event.ID, Event: "transient_draft_lookup_404", Outcome: "preserved_operational_provenance", Resolution: "exact_release_id", Detail: "the endpoint failure did not override an exact draft release identity"})
+			records = append(records, OperationalRecord{StableID: "opref-receipt-" + event.ID, Classification: "OPERATIONAL_PROVENANCE", ReceiptID: event.ID, Event: "transient_draft_lookup_404", Outcome: "preserved_operational_provenance", Resolution: "exact_release_id", Detail: "the endpoint failure did not override an exact draft release identity"})
 		}
 	}
 	return records
