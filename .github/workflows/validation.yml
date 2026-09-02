@@ -52,7 +52,13 @@ jobs:
           fi
 
       - name: Format check
-        run: test -z "$(gofmt -l .)"
+        run: |
+          set -euo pipefail
+          formatted="$(gofmt -l .)"
+          if [ -n "$formatted" ]; then
+            printf '%s\n' "$formatted"
+            exit 1
+          fi
 
       - name: Build
         run: go build ./...
