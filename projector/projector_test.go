@@ -18,9 +18,32 @@ func TestConformanceFixtureVectors(t *testing.T) {
 	if len(fixtures.Cases) != 12 {
 		t.Fatalf("want exactly 12 fixture cases, got %d", len(fixtures.Cases))
 	}
+	if !equalCounts(fixtures.ProofChoiceCounts, map[string]int{"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4}) {
+		t.Fatal("fixture proof_choice_counts must be exactly 4/4/4")
+	}
+	if !equalCounts(fixtures.IndicatorCounts, map[string]int{"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}) {
+		t.Fatal("fixture indicator_counts must be exactly 4/4/4")
+	}
+	if len(fixtures.OperationalHistory) != 10 {
+		t.Fatalf("want 10 explicit operational-history records, got %d", len(fixtures.OperationalHistory))
+	}
+	for _, record := range fixtures.OperationalHistory {
+		if record.StableID == "" || record.Classification != "OPERATIONAL_REFUTED" {
+			t.Fatal("operational history requires stable_id and classification=OPERATIONAL_REFUTED")
+		}
+	}
 	for _, fixture := range fixtures.Cases {
 		t.Run(fixture.Name, func(t *testing.T) {
 			projection := Project(fixture.Events)
+			if fixture.ProofChoice == "" || fixture.Indicator == "" {
+				t.Fatal("every fixture case must emit literal proof_choice and indicator")
+			}
+			if !equalCounts(projection.ProofChoiceCounts, fixtures.ProofChoiceCounts) || !equalCounts(projection.IndicatorCounts, fixtures.IndicatorCounts) {
+				t.Fatal("projection must emit exact top-level proof and indicator counts")
+			}
+			if projection.ProofChoice == "" || projection.Indicator == "" {
+				t.Fatal("projection must emit literal proof_choice and indicator")
+			}
 			if projection.Decision != fixture.Expect.Decision {
 				t.Fatalf("decision: want %s got %s", fixture.Expect.Decision, projection.Decision)
 			}
@@ -70,6 +93,17 @@ func TestMetacodeContractIsExecutableAndBounded(t *testing.T) {
 	}
 	if contract.ActivityCount != 12 || len(contract.Activities) != 12 {
 		t.Fatal("contract activity count is not exactly 12")
+	}
+	if !equalCounts(contract.ProofChoiceCounts, map[string]int{"FOUNDATION": 4, "COHERENCE": 4, "REGRESSION": 4}) {
+		t.Fatal("contract proof_choice_counts is not exactly 4/4/4")
+	}
+	if !equalCounts(contract.IndicatorCounts, map[string]int{"DRIVER": 4, "OUTCOME": 4, "GUARDRAIL": 4}) {
+		t.Fatal("contract indicator_counts is not exactly 4/4/4")
+	}
+	for _, cell := range contract.Cells {
+		if cell.ProofChoice == "" || cell.Indicator == "" {
+			t.Fatalf("cell %s has incomplete literal evidence", cell.ID)
+		}
 	}
 	projection, err := ProjectWithContract(nil, contract)
 	if err != nil {

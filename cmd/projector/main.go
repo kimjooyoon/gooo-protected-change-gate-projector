@@ -16,14 +16,19 @@ import (
 type stringList []string
 
 type fixtureReplay struct {
-	Schema      string                 `json:"schema"`
-	Cases       []fixtureReplayCase    `json:"cases"`
-	Measurement *projector.Measurement `json:"measurement,omitempty"`
+	Schema               string                       `json:"schema"`
+	ProofChoiceCounts    map[string]int               `json:"proof_choice_counts"`
+	IndicatorCounts      map[string]int               `json:"indicator_counts"`
+	Cases                []fixtureReplayCase          `json:"cases"`
+	OperationalHistory   []projector.OperationalRecord `json:"operational_history"`
+	Measurement          *projector.Measurement       `json:"measurement,omitempty"`
 }
 
 type fixtureReplayCase struct {
-	Name       string               `json:"name"`
-	Projection projector.Projection `json:"projection"`
+	Name        string               `json:"name"`
+	ProofChoice string               `json:"proof_choice"`
+	Indicator   string               `json:"indicator"`
+	Projection  projector.Projection `json:"projection"`
 }
 
 func (list *stringList) String() string { return strings.Join(*list, ",") }
@@ -56,14 +61,24 @@ func main() {
 
 	started := time.Now()
 	if fixtures, fixtureErr := projector.DecodeFixtures(data); fixtureErr == nil && fixtures.Cases != nil {
-		replay := fixtureReplay{Schema: projector.Schema, Cases: make([]fixtureReplayCase, 0, len(fixtures.Cases))}
+		replay := fixtureReplay{
+			Schema:             projector.Schema,
+			ProofChoiceCounts:  copyCounts(fixtures.ProofChoiceCounts),
+			IndicatorCounts:    copyCounts(fixtures.IndicatorCounts),
+			Cases:              make([]fixtureReplayCase, 0, len(fixtures.Cases)),
+			OperationalHistory: append([]projector.OperationalRecord{}, fixtures.OperationalHistory...),
+		}
 		for _, fixture := range fixtures.Cases {
 			projection, projectErr := projector.ProjectWithContract(fixture.Events, contract)
 			if projectErr != nil {
 				fail("project fixture %s: %v", fixture.Name, projectErr)
 			}
+			projection.ProofChoice = fixture.ProofChoice
+			projection.Indicator = fixture.Indicator
+			projection.ProofChoiceCounts = copyCounts(fixtures.ProofChoiceCounts)
+			projection.IndicatorCounts = copyCounts(fixtures.IndicatorCounts)
 			projection.Metrics.GeneratedArtifacts = append([]string{}, generated...)
-			replay.Cases = append(replay.Cases, fixtureReplayCase{Name: fixture.Name, Projection: projection})
+			replay.Cases = append(replay.Cases, fixtureReplayCase{Name: fixture.Name, ProofChoice: fixture.ProofChoice, Indicator: fixture.Indicator, Projection: projection})
 		}
 		if *measure {
 			measurement := observedMeasurement(started)
@@ -86,6 +101,14 @@ func main() {
 		projection.Measurement = observedMeasurement(started)
 	}
 	writeJSON(projection, *outPath)
+}
+
+func copyCounts(counts map[string]int) map[string]int {
+	copyOf := make(map[string]int, len(counts))
+	for key, value := range counts {
+		copyOf[key] = value
+	}
+	return copyOf
 }
 
 func observedMeasurement(started time.Time) projector.Measurement {

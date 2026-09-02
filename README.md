@@ -12,11 +12,11 @@ The projector never commits, merges, tags, creates or publishes releases, replac
 
 ## Contract and fixtures
 
-The executable metacode is [.gooo](/Users/alice/Documents/Codex/2026-09-02/gooo-protected-change-gate-projector/.gooo). It declares exactly 12 cells and 12 activities: four `FOUNDATION`, four `COHERENCE`, and four `REGRESSION`; and four each of `DRIVER`, `OUTCOME`, and `GUARDRAIL`. There is no scalar output.
+The executable metacode is [.gooo](/Users/alice/Documents/Codex/2026-09-02/gooo-protected-change-gate-projector/.gooo). Each cell and activity has literal `proof_choice` and `indicator` fields. The contract declares exactly 12 cells and 12 activities: four `FOUNDATION`, four `COHERENCE`, and four `REGRESSION`; and four each of `DRIVER`, `OUTCOME`, and `GUARDRAIL`. Generated evidence repeats the per-case fields and exact top-level count maps. There is no scalar output.
 
 The deterministic fixture set has exactly 12 vectors: normal implementation PR, normal maintenance PR, direct-main implementation, direct-main release-plumbing, missing PR CI, stale main CI, lightweight tag, tag-target mismatch, publish before policy, publish before asset verification, immutable-asset replacement, and exact-ID interrupted-release resumption.
 
-The fixture file also contains explicit historical event shapes for the observed failure classes. It does not query sibling repositories or depend on live repository state.
+The fixture file also contains explicit historical event shapes for the observed failure classes, plus stable `OPERATIONAL_REFUTED` records for the preserved mutable `v0.1.0` predecessor and preserved failed workflow runs. It does not query sibling repositories or depend on live repository state.
 
 ## Validation boundary
 

@@ -1,7 +1,23 @@
 {
+  "proof_choice_counts": {"FOUNDATION":4,"COHERENCE":4,"REGRESSION":4},
+  "indicator_counts": {"DRIVER":4,"OUTCOME":4,"GUARDRAIL":4},
+  "operational_history": [
+    {"stable_id":"opref-release-v0.1.0-mutable-predecessor","classification":"OPERATIONAL_REFUTED","decision":"REFUTED","semantic_state":"REFUTED_PREDECESSOR","release_id":380952007,"tag":"v0.1.0","event":"published_release","outcome":"preserved","detail":"v0.1.0 was published while the immutable release field was null"},
+    {"stable_id":"opref-release-v0.1.0-publish-before-immutable-policy","classification":"OPERATIONAL_REFUTED","decision":"REFUTED","semantic_state":"PUBLISH_BEFORE_IMMUTABLE_POLICY","release_id":380952007,"tag":"v0.1.0","event":"publish","outcome":"preserved","detail":"the mutable predecessor was published before immutable-release policy enablement"},
+    {"stable_id":"opref-workflow-run-33585019284","classification":"OPERATIONAL_REFUTED","run_id":33585019284,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585133228","classification":"OPERATIONAL_REFUTED","run_id":33585133228,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585190126","classification":"OPERATIONAL_REFUTED","run_id":33585190126,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585280352","classification":"OPERATIONAL_REFUTED","run_id":33585280352,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585352730","classification":"OPERATIONAL_REFUTED","run_id":33585352730,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585470021","classification":"OPERATIONAL_REFUTED","run_id":33585470021,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585474098","classification":"OPERATIONAL_REFUTED","run_id":33585474098,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"},
+    {"stable_id":"opref-workflow-run-33585353363","classification":"OPERATIONAL_REFUTED","run_id":33585353363,"event":"preserved_failed_workflow_run","outcome":"preserved","detail":"gooo-validation failure retained"}
+  ],
   "cases": [
     {
       "name": "normal_implementation_pr_path",
+      "proof_choice": "FOUNDATION",
+      "indicator": "DRIVER",
       "events": [
         {"id":"impl-01","kind":"author_branch","ref":"refs/heads/feature/implementation","sha":"branch-impl","substantive":true,"change_class":"implementation"},
         {"id":"impl-02","kind":"pull_request_opened","pr_number":101,"ref":"refs/heads/feature/implementation"},
@@ -20,6 +36,8 @@
     },
     {
       "name": "normal_maintenance_pr_path",
+      "proof_choice": "FOUNDATION",
+      "indicator": "DRIVER",
       "events": [
         {"id":"maint-01","kind":"author_branch","ref":"refs/heads/maintenance/release-hardening","sha":"branch-maint","substantive":true,"change_class":"maintenance","historical_shape":"release_hardening_is_substantive"},
         {"id":"maint-02","kind":"pull_request_opened","pr_number":102,"ref":"refs/heads/maintenance/release-hardening"},
@@ -38,6 +56,8 @@
     },
     {
       "name": "direct_main_implementation",
+      "proof_choice": "FOUNDATION",
+      "indicator": "OUTCOME",
       "events": [
         {"id":"direct-impl-01","kind":"author_branch","ref":"refs/heads/feature/direct"},
         {"id":"direct-impl-02","kind":"push","ref":"refs/heads/main","sha":"bad-impl","direct_main":true,"substantive":true,"change_class":"implementation","historical_shape":"push_to_default_branch_without_pull_request"}
@@ -46,6 +66,8 @@
     },
     {
       "name": "direct_main_release_plumbing",
+      "proof_choice": "FOUNDATION",
+      "indicator": "OUTCOME",
       "events": [
         {"id":"direct-release-01","kind":"author_branch","ref":"refs/heads/release/hardening"},
         {"id":"direct-release-02","kind":"change","ref":"refs/heads/main","sha":"bad-release","direct_main":true,"substantive":true,"change_class":"release_plumbing","historical_shape":"release_workflow_fix_on_default_branch"}
@@ -54,6 +76,8 @@
     },
     {
       "name": "pr_ci_missing",
+      "proof_choice": "COHERENCE",
+      "indicator": "OUTCOME",
       "events": [
         {"id":"missing-pr-01","kind":"author_branch","ref":"refs/heads/feature/no-ci","substantive":true,"change_class":"implementation"},
         {"id":"missing-pr-02","kind":"pull_request_opened","pr_number":103,"ref":"refs/heads/feature/no-ci","historical_shape":"pull_request_without_check_run"}
@@ -62,6 +86,8 @@
     },
     {
       "name": "main_ci_stale",
+      "proof_choice": "COHERENCE",
+      "indicator": "GUARDRAIL",
       "events": [
         {"id":"stale-main-01","kind":"author_branch","ref":"refs/heads/feature/stale","substantive":true,"change_class":"implementation"},
         {"id":"stale-main-02","kind":"pull_request_opened","pr_number":104},
@@ -73,6 +99,8 @@
     },
     {
       "name": "lightweight_instead_of_annotated_tag",
+      "proof_choice": "COHERENCE",
+      "indicator": "DRIVER",
       "events": [
         {"id":"light-tag-01","kind":"author_branch","ref":"refs/heads/feature/light-tag","substantive":true,"change_class":"implementation"},
         {"id":"light-tag-02","kind":"pull_request_opened","pr_number":105},
@@ -86,6 +114,8 @@
     },
     {
       "name": "tag_target_mismatch",
+      "proof_choice": "COHERENCE",
+      "indicator": "DRIVER",
       "events": [
         {"id":"target-mismatch-01","kind":"author_branch","ref":"refs/heads/feature/wrong-target","substantive":true,"change_class":"implementation"},
         {"id":"target-mismatch-02","kind":"pull_request_opened","pr_number":106},
@@ -101,6 +131,8 @@
     },
     {
       "name": "publish_before_policy",
+      "proof_choice": "REGRESSION",
+      "indicator": "GUARDRAIL",
       "events": [
         {"id":"early-policy-01","kind":"author_branch","ref":"refs/heads/feature/early-policy","substantive":true,"change_class":"implementation"},
         {"id":"early-policy-02","kind":"pull_request_opened","pr_number":107},
@@ -114,6 +146,8 @@
     },
     {
       "name": "publish_before_asset_verification",
+      "proof_choice": "REGRESSION",
+      "indicator": "GUARDRAIL",
       "events": [
         {"id":"early-verify-01","kind":"author_branch","ref":"refs/heads/feature/early-verify","substantive":true,"change_class":"implementation"},
         {"id":"early-verify-02","kind":"pull_request_opened","pr_number":108},
@@ -130,6 +164,8 @@
     },
     {
       "name": "attempt_to_replace_immutable_asset",
+      "proof_choice": "REGRESSION",
+      "indicator": "OUTCOME",
       "events": [
         {"id":"replace-01","kind":"author_branch","ref":"refs/heads/feature/replace","substantive":true,"change_class":"implementation"},
         {"id":"replace-02","kind":"pull_request_opened","pr_number":109},
@@ -146,6 +182,8 @@
     },
     {
       "name": "interrupted_release_resumed_by_exact_release_id_without_recreation",
+      "proof_choice": "REGRESSION",
+      "indicator": "GUARDRAIL",
       "events": [
         {"id":"resume-01","kind":"author_branch","ref":"refs/heads/feature/resume","substantive":true,"change_class":"implementation"},
         {"id":"resume-02","kind":"pull_request_opened","pr_number":110},
