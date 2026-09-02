@@ -36,14 +36,23 @@ jobs:
             --generated-artifact gooo-replay.json
 
       - name: Fix check
-        run: go fix ./...
+        run: |
+          set -euo pipefail
+          fix_diff="$RUNNER_TEMP/gooo/go-fix.diff"
+          set +e
+          go fix -diff ./... > "$fix_diff" 2>&1
+          status=$?
+          set -e
+          if [ -s "$fix_diff" ]; then
+            cat "$fix_diff"
+            exit 1
+          fi
+          if [ "$status" -ne 0 ] && [ "$status" -ne 1 ]; then
+            exit "$status"
+          fi
 
       - name: Format check
-        run: gofmt -w .
-
-      - name: Record Actions-only source transform
-        if: always()
-        run: git diff --binary > "$RUNNER_TEMP/gooo/source-transform.patch"
+        run: test -z "$(gofmt -l .)"
 
       - name: Build
         run: go build ./...
@@ -87,7 +96,6 @@ jobs:
 
       - name: Upload generated artifacts
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: gooo-validation-${{ github.run_id }}
           path: ${{ runner.temp }}/gooo

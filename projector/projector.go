@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -38,28 +39,28 @@ var RequiredStages = []string{
 }
 
 type Receipt struct {
-	ID             string            `json:"id"`
-	Kind           string            `json:"kind"`
-	CreatedAt      string            `json:"created_at,omitempty"`
-	Ref            string            `json:"ref,omitempty"`
-	SHA            string            `json:"sha,omitempty"`
-	HeadSHA        string            `json:"head_sha,omitempty"`
-	PRNumber       int               `json:"pr_number,omitempty"`
-	ReleaseID      string            `json:"release_id,omitempty"`
-	Tag            string            `json:"tag,omitempty"`
-	TargetSHA      string            `json:"target_sha,omitempty"`
-	AssetName      string            `json:"asset_name,omitempty"`
-	AssetDigest    string            `json:"asset_digest,omitempty"`
-	Status         string            `json:"status,omitempty"`
-	Annotated      *bool             `json:"annotated,omitempty"`
-	Draft          *bool             `json:"draft,omitempty"`
-	Fresh          *bool             `json:"fresh,omitempty"`
-	DirectMain     bool              `json:"direct_main,omitempty"`
-	Substantive    bool              `json:"substantive,omitempty"`
-	ChangeClass    string            `json:"change_class,omitempty"`
-	Action         string            `json:"action,omitempty"`
-	HistoricalShape string           `json:"historical_shape,omitempty"`
-	Metadata       map[string]string `json:"metadata,omitempty"`
+	ID              string            `json:"id"`
+	Kind            string            `json:"kind"`
+	CreatedAt       string            `json:"created_at,omitempty"`
+	Ref             string            `json:"ref,omitempty"`
+	SHA             string            `json:"sha,omitempty"`
+	HeadSHA         string            `json:"head_sha,omitempty"`
+	PRNumber        int               `json:"pr_number,omitempty"`
+	ReleaseID       string            `json:"release_id,omitempty"`
+	Tag             string            `json:"tag,omitempty"`
+	TargetSHA       string            `json:"target_sha,omitempty"`
+	AssetName       string            `json:"asset_name,omitempty"`
+	AssetDigest     string            `json:"asset_digest,omitempty"`
+	Status          string            `json:"status,omitempty"`
+	Annotated       *bool             `json:"annotated,omitempty"`
+	Draft           *bool             `json:"draft,omitempty"`
+	Fresh           *bool             `json:"fresh,omitempty"`
+	DirectMain      bool              `json:"direct_main,omitempty"`
+	Substantive     bool              `json:"substantive,omitempty"`
+	ChangeClass     string            `json:"change_class,omitempty"`
+	Action          string            `json:"action,omitempty"`
+	HistoricalShape string            `json:"historical_shape,omitempty"`
+	Metadata        map[string]string `json:"metadata,omitempty"`
 }
 
 type UnknownFrontier struct {
@@ -82,10 +83,10 @@ type Evidence struct {
 }
 
 type Measurement struct {
-	State     string `json:"state"`
-	WallMS    *int64 `json:"wall_ms"`
-	RSSBytes  *int64 `json:"rss_bytes"`
-	Unknown   *Evidence `json:"unknown,omitempty"`
+	State    string    `json:"state"`
+	WallMS   *int64    `json:"wall_ms"`
+	RSSBytes *int64    `json:"rss_bytes"`
+	Unknown  *Evidence `json:"unknown,omitempty"`
 }
 
 type Metrics struct {
@@ -112,17 +113,17 @@ type OperationalRecord struct {
 }
 
 type Projection struct {
-	Schema                  string              `json:"schema"`
-	Decision                Decision            `json:"decision"`
-	CurrentStage            string              `json:"current_stage"`
-	NextOperation           string              `json:"next_operation"`
-	MinimalCausalFrontier   []string            `json:"minimal_causal_frontier"`
-	Reason                  string              `json:"reason"`
-	Unknown                 *UnknownFrontier    `json:"unknown,omitempty"`
-	Metrics                 Metrics             `json:"metrics"`
-	OperationalHistory      []OperationalRecord `json:"operational_history"`
-	UtilityImprovement      Evidence            `json:"utility_improvement"`
-	Measurement             Measurement         `json:"measurement"`
+	Schema                string              `json:"schema"`
+	Decision              Decision            `json:"decision"`
+	CurrentStage          string              `json:"current_stage"`
+	NextOperation         string              `json:"next_operation"`
+	MinimalCausalFrontier []string            `json:"minimal_causal_frontier"`
+	Reason                string              `json:"reason"`
+	Unknown               *UnknownFrontier    `json:"unknown,omitempty"`
+	Metrics               Metrics             `json:"metrics"`
+	OperationalHistory    []OperationalRecord `json:"operational_history"`
+	UtilityImprovement    Evidence            `json:"utility_improvement"`
+	Measurement           Measurement         `json:"measurement"`
 }
 
 type EventFile struct {
@@ -130,8 +131,8 @@ type EventFile struct {
 }
 
 type Case struct {
-	Name   string    `json:"name"`
-	Events []Receipt `json:"events"`
+	Name   string      `json:"name"`
+	Events []Receipt   `json:"events"`
 	Expect Expectation `json:"expect"`
 }
 
@@ -140,14 +141,14 @@ type FixtureFile struct {
 }
 
 type Expectation struct {
-	Decision             Decision `json:"decision"`
-	CurrentStage         string   `json:"current_stage"`
-	GatesClosed          int      `json:"gates_closed"`
-	GatesUnknown         int      `json:"gates_unknown"`
-	GatesRefuted         int      `json:"gates_refuted"`
-	DirectMainEvents     int      `json:"direct_main_events"`
-	RecreatedAttempts    int      `json:"recreated_artifact_attempts"`
-	AcceptedResumes      int      `json:"accepted_resume_operations"`
+	Decision          Decision `json:"decision"`
+	CurrentStage      string   `json:"current_stage"`
+	GatesClosed       int      `json:"gates_closed"`
+	GatesUnknown      int      `json:"gates_unknown"`
+	GatesRefuted      int      `json:"gates_refuted"`
+	DirectMainEvents  int      `json:"direct_main_events"`
+	RecreatedAttempts int      `json:"recreated_artifact_attempts"`
+	AcceptedResumes   int      `json:"accepted_resume_operations"`
 }
 
 type Cell struct {
@@ -167,15 +168,15 @@ type Activity struct {
 }
 
 type Contract struct {
-	Version                    string
-	Authority                  string
-	Mode                       string
-	Precedence                 []Decision
-	CellCount                  int
-	ActivityCount              int
-	CrossProjectRequiredGates  int
-	Cells                      []Cell
-	Activities                 []Activity
+	Version                   string
+	Authority                 string
+	Mode                      string
+	Precedence                []Decision
+	CellCount                 int
+	ActivityCount             int
+	CrossProjectRequiredGates int
+	Cells                     []Cell
+	Activities                []Activity
 }
 
 func LoadContract(r io.Reader) (Contract, error) {
@@ -231,33 +232,47 @@ func LoadContract(r io.Reader) (Contract, error) {
 		value = strings.Trim(strings.TrimSpace(value), "\"")
 		if section == "cell" && currentCell != nil {
 			switch key {
-			case "class": currentCell.Class = value
-			case "role": currentCell.Role = value
-			case "stage": currentCell.Stage = value
-			case "activity": currentCell.Activity = value
+			case "class":
+				currentCell.Class = value
+			case "role":
+				currentCell.Role = value
+			case "stage":
+				currentCell.Stage = value
+			case "activity":
+				currentCell.Activity = value
 			}
 			continue
 		}
 		if section == "activity" && currentActivity != nil {
 			switch key {
-			case "cell": currentActivity.Cell = value
-			case "stage": currentActivity.Stage = value
-			case "on": currentActivity.On = value
-			case "emit": currentActivity.Emit = value
+			case "cell":
+				currentActivity.Cell = value
+			case "stage":
+				currentActivity.Stage = value
+			case "on":
+				currentActivity.On = value
+			case "emit":
+				currentActivity.Emit = value
 			}
 			continue
 		}
 		switch key {
-		case "version": contract.Version = value
-		case "authority": contract.Authority = value
-		case "mode": contract.Mode = value
+		case "version":
+			contract.Version = value
+		case "authority":
+			contract.Authority = value
+		case "mode":
+			contract.Mode = value
 		case "precedence":
-			for _, item := range strings.Split(value, ">") {
+			for item := range strings.SplitSeq(value, ">") {
 				contract.Precedence = append(contract.Precedence, Decision(strings.TrimSpace(item)))
 			}
-		case "cells": contract.CellCount, _ = strconv.Atoi(value)
-		case "activities": contract.ActivityCount, _ = strconv.Atoi(value)
-		case "cross_project_required_gates": contract.CrossProjectRequiredGates, _ = strconv.Atoi(value)
+		case "cells":
+			contract.CellCount, _ = strconv.Atoi(value)
+		case "activities":
+			contract.ActivityCount, _ = strconv.Atoi(value)
+		case "cross_project_required_gates":
+			contract.CrossProjectRequiredGates, _ = strconv.Atoi(value)
 		}
 	}
 	if err := scanner.Err(); err != nil {
@@ -344,9 +359,13 @@ func ValidateContract(contract Contract) error {
 }
 
 func equalDecisions(left, right []Decision) bool {
-	if len(left) != len(right) { return false }
+	if len(left) != len(right) {
+		return false
+	}
 	for i := range left {
-		if left[i] != right[i] { return false }
+		if left[i] != right[i] {
+			return false
+		}
 	}
 	return true
 }
@@ -371,12 +390,12 @@ func ProjectWithContract(events []Receipt, contract Contract) (Projection, error
 func project(input []Receipt, contract *Contract) Projection {
 	events, ambiguous := uniqueReceipts(input)
 	metrics := Metrics{
-		EventsObserved: len(events),
-		GatesRequired: len(RequiredStages),
-		RepositoryWrites: 0,
-		RemoteMutations: 0,
+		EventsObserved:        len(events),
+		GatesRequired:         len(RequiredStages),
+		RepositoryWrites:      0,
+		RemoteMutations:       0,
 		DestructiveOperations: 0,
-		GeneratedArtifacts: []string{},
+		GeneratedArtifacts:    []string{},
 	}
 	if contract != nil && contract.CrossProjectRequiredGates == 0 {
 		metrics.GatesRequired = contract.CellCount
@@ -389,7 +408,9 @@ func project(input []Receipt, contract *Contract) Projection {
 	}
 	if len(metricsDirectMain(events)) > 0 {
 		ids := []string{}
-		for _, event := range metricsDirectMain(events) { ids = append(ids, event.ID) }
+		for _, event := range metricsDirectMain(events) {
+			ids = append(ids, event.ID)
+		}
 		return makeRefuted(events, metrics, operational, "OPEN_PR", "substantive repository change reached the default branch without a pull request", ids)
 	}
 	if len(ambiguous) > 0 {
@@ -476,16 +497,16 @@ func project(input []Receipt, contract *Contract) Projection {
 	closed++
 	metrics.GatesClosed = closed
 	return Projection{
-		Schema: Schema,
-		Decision: Closed,
-		CurrentStage: "IMMUTABLE_AUDIT",
-		NextOperation: "none",
+		Schema:                Schema,
+		Decision:              Closed,
+		CurrentStage:          "IMMUTABLE_AUDIT",
+		NextOperation:         "none",
 		MinimalCausalFrontier: []string{audit.ID},
-		Reason: "all bounded change-authority gates are closed in order",
-		Metrics: metrics,
-		OperationalHistory: operational,
-		UtilityImprovement: unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
-		Measurement: unknownMeasurement(),
+		Reason:                "all bounded change-authority gates are closed in order",
+		Metrics:               metrics,
+		OperationalHistory:    operational,
+		UtilityImprovement:    unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
+		Measurement:           unknownMeasurement(),
 	}
 }
 
@@ -497,17 +518,17 @@ func makeUnknown(metrics Metrics, operational []OperationalRecord, closed int, f
 	metrics.GatesClosed = closed
 	metrics.GatesUnknown = 1
 	return Projection{
-		Schema: Schema,
-		Decision: Unknown,
-		CurrentStage: frontier.Stage,
-		NextOperation: frontier.NextOperation,
+		Schema:                Schema,
+		Decision:              Unknown,
+		CurrentStage:          frontier.Stage,
+		NextOperation:         frontier.NextOperation,
 		MinimalCausalFrontier: []string{frontier.BlockedBy},
-		Reason: frontier.Reason,
-		Unknown: &frontier,
-		Metrics: metrics,
-		OperationalHistory: operational,
-		UtilityImprovement: unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
-		Measurement: unknownMeasurement(),
+		Reason:                frontier.Reason,
+		Unknown:               &frontier,
+		Metrics:               metrics,
+		OperationalHistory:    operational,
+		UtilityImprovement:    unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
+		Measurement:           unknownMeasurement(),
 	}
 }
 
@@ -515,16 +536,16 @@ func makeRefuted(events []Receipt, metrics Metrics, operational []OperationalRec
 	metrics.GatesClosed = closedBeforeStage(events, stage)
 	metrics.GatesRefuted = 1
 	return Projection{
-		Schema: Schema,
-		Decision: Refuted,
-		CurrentStage: stage,
-		NextOperation: "preserve the receipt and stop the unauthorized operation",
+		Schema:                Schema,
+		Decision:              Refuted,
+		CurrentStage:          stage,
+		NextOperation:         "preserve the receipt and stop the unauthorized operation",
 		MinimalCausalFrontier: ids,
-		Reason: reason,
-		Metrics: metrics,
-		OperationalHistory: operational,
-		UtilityImprovement: unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
-		Measurement: unknownMeasurement(),
+		Reason:                reason,
+		Metrics:               metrics,
+		OperationalHistory:    operational,
+		UtilityImprovement:    unknownEvidence("UTILITY_IMPROVEMENT", "assess external utility only with independent evidence", "external_utility_not_evidenced", "none", "no independent external utility evidence was supplied"),
+		Measurement:           unknownMeasurement(),
 	}
 }
 
@@ -533,29 +554,51 @@ func closedBeforeStage(events []Receipt, stage string) int {
 	stageIndex := indices[stage]
 	closed := 0
 	for _, candidate := range RequiredStages {
-		if candidate == stage { return closed }
-		if stageIndex >= 0 && indices[candidate] >= stageIndex { return closed }
+		if candidate == stage {
+			return closed
+		}
+		if stageIndex >= 0 && indices[candidate] >= stageIndex {
+			return closed
+		}
 		event := receiptAt(events, indices[candidate])
-		if event == nil { return closed }
+		if event == nil {
+			return closed
+		}
 		switch candidate {
 		case "PR_ACTIONS_GREEN":
-			if !green(event) { return closed }
+			if !green(event) {
+				return closed
+			}
 		case "MAIN_ACTIONS_GREEN":
 			merge := receiptAt(events, indices["MERGE"])
-			if !green(event) || (event.Fresh != nil && !*event.Fresh) || (merge != nil && merge.SHA != "" && event.HeadSHA != "" && event.HeadSHA != merge.SHA) { return closed }
+			if !green(event) || (event.Fresh != nil && !*event.Fresh) || (merge != nil && merge.SHA != "" && event.HeadSHA != "" && event.HeadSHA != merge.SHA) {
+				return closed
+			}
 		case "ANNOTATED_TAG":
-			if event.Annotated == nil || !*event.Annotated { return closed }
+			if event.Annotated == nil || !*event.Annotated {
+				return closed
+			}
 		case "DRAFT_RELEASE":
-			if event.ReleaseID == "" || (event.Draft != nil && !*event.Draft) { return closed }
+			if event.ReleaseID == "" || (event.Draft != nil && !*event.Draft) {
+				return closed
+			}
 		case "UPLOAD_NEW_ASSETS":
-			if event.ReleaseID == "" || event.AssetName == "" || event.AssetDigest == "" { return closed }
+			if event.ReleaseID == "" || event.AssetName == "" || event.AssetDigest == "" {
+				return closed
+			}
 		case "VERIFY_TAG_TARGET_AND_ASSET_DIGEST":
 			upload := receiptAt(events, indices["UPLOAD_NEW_ASSETS"])
-			if upload == nil || event.ReleaseID != upload.ReleaseID || event.AssetName != upload.AssetName || event.AssetDigest != upload.AssetDigest { return closed }
+			if upload == nil || event.ReleaseID != upload.ReleaseID || event.AssetName != upload.AssetName || event.AssetDigest != upload.AssetDigest {
+				return closed
+			}
 		case "PUBLISH":
-			if event.ReleaseID == "" { return closed }
+			if event.ReleaseID == "" {
+				return closed
+			}
 		case "IMMUTABLE_AUDIT":
-			if !green(event) { return closed }
+			if !green(event) {
+				return closed
+			}
 		}
 		closed++
 	}
@@ -595,14 +638,13 @@ func kind(receipt Receipt) string {
 
 func hasKind(receipt Receipt, names ...string) bool {
 	k := kind(receipt)
-	for _, name := range names {
-		if k == name { return true }
-	}
-	return false
+	return slices.Contains(names, k)
 }
 
 func isDirectMain(receipt Receipt) bool {
-	if receipt.DirectMain { return true }
+	if receipt.DirectMain {
+		return true
+	}
 	k := kind(receipt)
 	mainRef := receipt.Ref == "main" || receipt.Ref == "refs/heads/main"
 	change := receipt.Substantive || receipt.ChangeClass == "implementation" || receipt.ChangeClass == "maintenance" || receipt.ChangeClass == "release_plumbing"
@@ -612,7 +654,9 @@ func isDirectMain(receipt Receipt) bool {
 func metricsDirectMain(events []Receipt) []Receipt {
 	result := []Receipt{}
 	for _, event := range events {
-		if isDirectMain(event) { result = append(result, event) }
+		if isDirectMain(event) {
+			result = append(result, event)
+		}
 	}
 	return result
 }
@@ -628,7 +672,9 @@ func countRecreatedAttempts(events []Receipt) int {
 		}
 		if hasKind(event, "asset_uploaded") && event.AssetName != "" {
 			key := event.ReleaseID + "\x00" + event.AssetName
-			if seenAssets[key] { count++ }
+			if seenAssets[key] {
+				count++
+			}
 			seenAssets[key] = true
 		}
 	}
@@ -644,7 +690,9 @@ func idsForRecreated(events []Receipt) []string {
 		}
 		if hasKind(event, "asset_uploaded") && event.AssetName != "" {
 			key := event.ReleaseID + "\x00" + event.AssetName
-			if seenAssets[key] { ids = append(ids, event.ID) }
+			if seenAssets[key] {
+				ids = append(ids, event.ID)
+			}
 			seenAssets[key] = true
 		}
 	}
@@ -653,39 +701,61 @@ func idsForRecreated(events []Receipt) []string {
 
 func stageIndices(events []Receipt) map[string]int {
 	indices := make(map[string]int, len(RequiredStages))
-	for _, stage := range RequiredStages { indices[stage] = -1 }
+	for _, stage := range RequiredStages {
+		indices[stage] = -1
+	}
 	for i, event := range events {
 		k := kind(event)
 		switch {
-		case hasKind(event, "author_branch", "branch_created"): setFirst(indices, "AUTHOR_BRANCH", i)
-		case hasKind(event, "pull_request_opened", "pr_opened", "open_pr"): setFirst(indices, "OPEN_PR", i)
-		case hasKind(event, "pr_actions", "pr_actions_green", "pull_request_actions"): setFirst(indices, "PR_ACTIONS_GREEN", i)
-		case hasKind(event, "merge", "pull_request_merged"): setFirst(indices, "MERGE", i)
-		case hasKind(event, "main_actions", "main_actions_green", "main_validation"): setFirst(indices, "MAIN_ACTIONS_GREEN", i)
-		case hasKind(event, "policy_lock", "policy_mutation"): setFirst(indices, "POLICY_LOCK", i)
-		case hasKind(event, "tag_created", "annotated_tag", "tag"): setFirst(indices, "ANNOTATED_TAG", i)
-		case hasKind(event, "draft_release", "release_draft_created"): setFirst(indices, "DRAFT_RELEASE", i)
-		case hasKind(event, "asset_uploaded", "release_asset_uploaded"): setFirst(indices, "UPLOAD_NEW_ASSETS", i)
-		case hasKind(event, "asset_verified", "release_verified", "verification"): setFirst(indices, "VERIFY_TAG_TARGET_AND_ASSET_DIGEST", i)
-		case hasKind(event, "release_published", "publish"): setFirst(indices, "PUBLISH", i)
-		case hasKind(event, "immutable_audit", "audit"): setFirst(indices, "IMMUTABLE_AUDIT", i)
+		case hasKind(event, "author_branch", "branch_created"):
+			setFirst(indices, "AUTHOR_BRANCH", i)
+		case hasKind(event, "pull_request_opened", "pr_opened", "open_pr"):
+			setFirst(indices, "OPEN_PR", i)
+		case hasKind(event, "pr_actions", "pr_actions_green", "pull_request_actions"):
+			setFirst(indices, "PR_ACTIONS_GREEN", i)
+		case hasKind(event, "merge", "pull_request_merged"):
+			setFirst(indices, "MERGE", i)
+		case hasKind(event, "main_actions", "main_actions_green", "main_validation"):
+			setFirst(indices, "MAIN_ACTIONS_GREEN", i)
+		case hasKind(event, "policy_lock", "policy_mutation"):
+			setFirst(indices, "POLICY_LOCK", i)
+		case hasKind(event, "tag_created", "annotated_tag", "tag"):
+			setFirst(indices, "ANNOTATED_TAG", i)
+		case hasKind(event, "draft_release", "release_draft_created"):
+			setFirst(indices, "DRAFT_RELEASE", i)
+		case hasKind(event, "asset_uploaded", "release_asset_uploaded"):
+			setFirst(indices, "UPLOAD_NEW_ASSETS", i)
+		case hasKind(event, "asset_verified", "release_verified", "verification"):
+			setFirst(indices, "VERIFY_TAG_TARGET_AND_ASSET_DIGEST", i)
+		case hasKind(event, "release_published", "publish"):
+			setFirst(indices, "PUBLISH", i)
+		case hasKind(event, "immutable_audit", "audit"):
+			setFirst(indices, "IMMUTABLE_AUDIT", i)
 		case k == "":
 		}
 	}
 	return indices
 }
 
-func setFirst(indices map[string]int, stage string, index int) { if indices[stage] < 0 { indices[stage] = index } }
+func setFirst(indices map[string]int, stage string, index int) {
+	if indices[stage] < 0 {
+		indices[stage] = index
+	}
+}
 
 func receiptAt(events []Receipt, index int) *Receipt {
-	if index < 0 || index >= len(events) { return nil }
+	if index < 0 || index >= len(events) {
+		return nil
+	}
 	return &events[index]
 }
 
 func stageIDs(events []Receipt, indices map[string]int, stages ...string) []string {
 	ids := []string{}
 	for _, stage := range stages {
-		if event := receiptAt(events, indices[stage]); event != nil { ids = append(ids, event.ID) }
+		if event := receiptAt(events, indices[stage]); event != nil {
+			ids = append(ids, event.ID)
+		}
 	}
 	return ids
 }
@@ -698,7 +768,11 @@ func orderRefutation(events []Receipt, indices map[string]int) *refutation {
 		return &refutation{"MAIN_ACTIONS_GREEN", "main validation occurred before the pull-request merge", stageIDs(events, indices, "MAIN_ACTIONS_GREEN", "MERGE")}
 	}
 	policyCount := 0
-	for _, event := range events { if hasKind(event, "policy_lock", "policy_mutation") { policyCount++ } }
+	for _, event := range events {
+		if hasKind(event, "policy_lock", "policy_mutation") {
+			policyCount++
+		}
+	}
 	if policyCount > 1 {
 		return &refutation{"POLICY_LOCK", "immutable policy mutation occurred more than once", policyIDs(events)}
 	}
@@ -740,7 +814,11 @@ func orderRefutation(events []Receipt, indices map[string]int) *refutation {
 
 func policyIDs(events []Receipt) []string {
 	ids := []string{}
-	for _, event := range events { if hasKind(event, "policy_lock", "policy_mutation") { ids = append(ids, event.ID) } }
+	for _, event := range events {
+		if hasKind(event, "policy_lock", "policy_mutation") {
+			ids = append(ids, event.ID)
+		}
+	}
 	return ids
 }
 
@@ -782,13 +860,17 @@ func DecodeEvents(data []byte) ([]Receipt, error) {
 
 func DecodeFixtures(data []byte) (FixtureFile, error) {
 	var fixtures FixtureFile
-	if err := json.Unmarshal(data, &fixtures); err != nil { return FixtureFile{}, err }
+	if err := json.Unmarshal(data, &fixtures); err != nil {
+		return FixtureFile{}, err
+	}
 	return fixtures, nil
 }
 
 func ReadContractFile(path string) (Contract, error) {
 	file, err := os.Open(path)
-	if err != nil { return Contract{}, err }
+	if err != nil {
+		return Contract{}, err
+	}
 	defer file.Close()
 	return LoadContract(file)
 }
